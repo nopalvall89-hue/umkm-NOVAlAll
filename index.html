@@ -1,0 +1,214 @@
+HTML
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noval Snack & Drink</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    .fade-hidden {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease;
+    }
+    .fade-show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-200 via-green-100 to-blue-100 font-sans">
+
+<div class="max-w-5xl mx-auto p-6">
+
+  <!-- HEADER -->
+  <div class="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-6 flex items-center gap-4 fade-hidden">
+    <img src="https://cdn-icons-png.flaticon.com/512/1046/1046784.png" class="w-16">
+    <div>
+      <h1 class="text-3xl font-bold text-blue-600">Noval Snack & Drink</h1>
+      <p class="text-gray-600">Minuman & camilan kekinian</p>
+    </div>
+  </div>
+
+  <!-- FORM + CART (DIGABUNG) -->
+  <div class="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-6 mt-6 fade-hidden">
+
+    <div class="grid md:grid-cols-2 gap-6">
+
+      <!-- FORM -->
+      <div>
+        <h2 class="text-xl font-semibold text-blue-600 mb-4">Data Pembeli</h2>
+
+        <div class="space-y-3">
+
+          <input id="nama" type="text" placeholder="Nama Anda"
+            class="w-full p-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-400 transition">
+
+          <textarea id="alamat" placeholder="Alamat lengkap"
+            class="w-full p-3 border-2 border-green-200 rounded-xl focus:ring-2 focus:ring-green-400 transition"></textarea>
+
+          <input id="catatan" type="text" placeholder="Catatan (opsional)"
+            class="w-full p-3 border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-400 transition">
+
+        </div>
+      </div>
+
+      <!-- CART -->
+      <div>
+        <h2 class="text-xl font-semibold text-green-600 mb-4">Keranjang</h2>
+
+        <ul id="cartList" class="text-sm space-y-2"></ul>
+
+        <div class="mt-3 text-sm">
+          <p>Subtotal: Rp<span id="subtotal">0</span></p>
+          <p>Ongkir: Rp<span id="ongkir">5000</span></p>
+          <p class="font-bold text-lg mt-1">Total: Rp<span id="total">0</span></p>
+        </div>
+
+        <button onclick="checkoutWA()"
+          class="mt-4 w-full bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 transition">
+          Checkout WhatsApp
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PRODUK -->
+  <div class="mt-6 fade-hidden">
+    <h2 class="text-2xl font-bold text-blue-600 mb-4">Menu Produk</h2>
+    <div id="productList" class="grid md:grid-cols-2 gap-6"></div>
+  </div>
+
+</div>
+
+<script>
+const products = [
+  {name:"Es Teh Jumbo", price:5000, img:"https://source.unsplash.com/400x300/?iced-tea"},
+  {name:"Choco Milk", price:10000, img:"https://source.unsplash.com/400x300/?chocolate-drink"},
+  {name:"Kentang Crispy", price:8000, img:"https://source.unsplash.com/400x300/?french-fries"},
+  {name:"Sosis Bakar", price:12000, img:"https://source.unsplash.com/400x300/?sausage"}
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+const ONGKIR = 5000;
+
+function saveCart(){
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+function renderProducts(){
+  let html = "";
+  products.forEach((p,i)=>{
+    html += `
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:scale-[1.03] transition">
+      <img src="${p.img}" class="w-full h-48 object-cover">
+      <div class="p-4">
+        <h3 class="font-bold">${p.name}</h3>
+        <p class="text-green-600">Rp${p.price}</p>
+        <button onclick="addToCart(${i})"
+          class="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+          Tambah ke Keranjang
+        </button>
+      </div>
+    </div>`;
+  });
+  document.getElementById("productList").innerHTML = html;
+}
+
+function addToCart(i){
+  let existing = cart.find(item => item.name === products[i].name);
+  if(existing){
+    existing.qty++;
+  } else {
+    cart.push({...products[i], qty:1});
+  }
+  saveCart();
+  updateCart();
+}
+
+function changeQty(index, change){
+  cart[index].qty += change;
+  if(cart[index].qty <= 0){
+    cart.splice(index,1);
+  }
+  saveCart();
+  updateCart();
+}
+
+function updateCart(){
+  let list = "";
+  let subtotal = 0;
+
+  cart.forEach((item, index)=>{
+    subtotal += item.price * item.qty;
+
+    list += `
+    <li class="flex justify-between items-center bg-gray-100 p-2 rounded-xl">
+      <div>${item.name}</div>
+      <div class="flex items-center gap-2">
+        <button onclick="changeQty(${index}, -1)" class="bg-red-500 text-white px-2 rounded">-</button>
+        <span>${item.qty}</span>
+        <button onclick="changeQty(${index}, 1)" class="bg-green-500 text-white px-2 rounded">+</button>
+      </div>
+    </li>`;
+  });
+
+  let total = subtotal + ONGKIR;
+
+  document.getElementById("cartList").innerHTML = list;
+  document.getElementById("subtotal").innerText = subtotal;
+  document.getElementById("total").innerText = total;
+}
+
+function checkoutWA(){
+  let nama = document.getElementById("nama").value;
+  let alamat = document.getElementById("alamat").value;
+  let catatan = document.getElementById("catatan").value;
+
+  if(!nama || !alamat){
+    alert("Isi nama & alamat dulu!");
+    return;
+  }
+
+  let text = "Pesanan:%0A";
+  let subtotal = 0;
+
+  cart.forEach(i=>{
+    subtotal += i.price * i.qty;
+    text += `- ${i.name} x${i.qty}%0A`;
+  });
+
+  let total = subtotal + ONGKIR;
+
+  text += `%0ASubtotal: Rp${subtotal}`;
+  text += `%0AOngkir: Rp${ONGKIR}`;
+  text += `%0ATotal: Rp${total}`;
+  text += `%0A%0ANama: ${nama}`;
+  text += `%0AAlamat: ${alamat}`;
+  text += `%0ACatatan: ${catatan}`;
+
+  window.open("https://wa.me/628979848933?text=" + text, "_blank");
+}
+
+renderProducts();
+updateCart();
+
+
+// ANIMASI SCROLL
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      entry.target.classList.add("fade-show");
+    }
+  });
+});
+document.querySelectorAll(".fade-hidden").forEach(el => observer.observe(el));
+
+</script>
+
+</body>
+          </html>
